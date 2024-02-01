@@ -2,7 +2,6 @@ package main
 
 import (
 	"Kjasn/Kin/kin"
-	"fmt"
 	"net/http"
 )
 
@@ -15,20 +14,24 @@ func main() {
 	router := kin.New()
 
 	router.GET("/", indexHandler)
-	router.GET("/hello", helloHandler)
+	router.GET("/ping", func(ctx *kin.Context) {
+		ctx.JSON(http.StatusOK, kin.H{
+			"name": "kjasn", 
+			"opt": "test",
+		})
+	})
+	router.GET("/hello", func(ctx *kin.Context) {
+		ctx.String(http.StatusOK, "hello %s, the path is %s\n", 
+		ctx.Query("name"), ctx.Path)
+	})
 	err := router.Run(":80")
 	if err != nil {
 		panic(err)
 	}
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "URL.Path = %q\n", r.URL.Path)
-}
 
 
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	for k, v := range r.Header {
-		fmt.Fprintf(w, "Header[%q] = %q\n", k, v)
-	}
+func indexHandler(ctx *kin.Context) {
+	ctx.HTML(http.StatusOK, "<h1> Welcome </h1>")
 }

@@ -1,49 +1,45 @@
 package kin
 
 import (
-	"fmt"
 	"net/http"
 )
 
-type HandlerFunc func(http.ResponseWriter, *http.Request)
+// type HandlerFunc func(http.ResponseWriter, *http.Request)
+type HandlerFunc func(*Context)
 
 type Engine struct {
-	router map[string]HandlerFunc
+	router *router
 }
 
 // kin.New()
 func New() *Engine {
-	return &Engine{router: make(map[string]HandlerFunc)}
+	return &Engine{router: newRouter()}
 }
 
 // engine.Run()
-func (e *Engine) Run(addr string) error {
-	return http.ListenAndServe(addr, e)
+func (engine *Engine) Run(addr string) error {
+	return http.ListenAndServe(addr, engine)
 }
 
 // serveHttp
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if handler, ok:= engine.router[req.Method + "-" + req.URL.Path]; ok{
-		handler(w, req)
-	} else {
-		// not exists
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "404 NOT FOUND: %s\n", req.URL)
-	}
+	// construct a context first
+	c := newContext(w, req)
+	// handle by router with context
+	engine.router.handle(c)
 }
 
 // engine.addRouter   not public
-func (e *Engine) addRouter(method string, pattern string, handler HandlerFunc) { // method -- GET/POST...
-	key := method + "-" + pattern
-	e.router[key] = handler
+func (engine *Engine) addRouter(method string, pattern string, handler HandlerFunc) { // method -- GET/POST...
+	engine.router.addRouter(method, pattern, handler)
 }
 
 // engine.GET()  add GET request
-func (e *Engine) GET(path string, handler HandlerFunc) {
-	e.addRouter("GET", path, handler)
+func (engine *Engine) GET(path string, handler HandlerFunc) {
+	engine.addRouter("GET", path, handler)
 }
 
 // engine.POST()  add POST request
-func (e *Engine) POST(path string, handler HandlerFunc) {
-	e.addRouter("POST", path, handler)
+func (engine *Engine) POST(path string, handler HandlerFunc) {
+	engine.addRouter("POST", path, handler)
 }
