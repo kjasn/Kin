@@ -15,6 +15,8 @@ type Context struct {
 	// request info
 	Path   string
 	Method string
+	Params map[string]string
+	// response info
 	StatusCode int
 }
 
@@ -37,8 +39,13 @@ func (c *Context) Query(key string) string {
 	return c.Req.URL.Query().Get(key)
 }
 
-// Writer   Response
+func (c *Context) Param(key string) string {
+	// val, _ := c.Params[key]
+	// return val
+	return c.Params[key]
+}
 
+// Writer   Response
 func (c *Context) Status(code int) {
 	c.StatusCode = code
 	c.Writer.WriteHeader(code)

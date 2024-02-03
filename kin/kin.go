@@ -31,7 +31,7 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // engine.addRouter   not public
 func (engine *Engine) addRouter(method string, pattern string, handler HandlerFunc) { // method -- GET/POST...
-	engine.router.addRouter(method, pattern, handler)
+	engine.router.addRoute(method, pattern, handler)
 }
 
 // engine.GET()  add GET request
