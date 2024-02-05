@@ -10,6 +10,14 @@ type router struct {
 	handlers map[string]HandlerFunc
 }
 
+// define router group
+type RouterGroup struct {
+	prefix string
+	middlewares []HandlerFunc
+	parent *RouterGroup	
+	engine *Engine
+}
+
 // not public
 func newRouter() *router {
 	return &router{
