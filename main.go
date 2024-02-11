@@ -2,6 +2,7 @@ package main
 
 import (
 	"Kjasn/Kin/kin"
+	"fmt"
 	"log"
 	"net/http"
 )
@@ -15,12 +16,6 @@ func main() {
 	router := kin.New()
 
 	router.GET("/", indexHandler)
-	router.GET("/ping", func(ctx *kin.Context) {
-		ctx.JSON(http.StatusOK, kin.H{
-			"name": "kjasn", 
-			"opt": "test",
-		})
-	})
 
 	g1 := router.Group("/v1")
 
@@ -29,22 +24,35 @@ func main() {
 	})
 
 	{
-		g1.GET("/hello", func(ctx *kin.Context) {
-			ctx.String(http.StatusOK, "hello %s, the path is %s\n", 
-			ctx.Query("name"), ctx.Path)
+		// parameters using ':'
+		// g1.GET("/golang", func(ctx *kin.Context) {
+		// 	ctx.String(http.StatusOK, "the route is fixed")
+		// })
+
+		g1.GET("/:lang", func(ctx *kin.Context) {
+			ctx.JSON(http.StatusOK, kin.H {
+				"lang" : ctx.Param("lang"),
+			})
+			ctx.String(http.StatusOK, "this is a dynamic route")
 		})
 
-		// parameters using ':'
-		g1.GET("/hello/:lang", func(ctx *kin.Context) {
-			ctx.JSON(http.StatusOK, kin.H {"lang" : ctx.Param("lang")})
+
+		// g1.GET("/golang/p", func(ctx *kin.Context) {
+		// 	ctx.String(http.StatusOK, "hello world~")
+		// })
+
+		g1.GET("/cpp", func(ctx *kin.Context) {
+			ctx.String(http.StatusOK, "this is cpp url")
 		})
+
+		fmt.Println("over")
 
 		// wildcard '*' match
-		g1.GET("/test/*filepath", func(ctx *kin.Context) {
-			ctx.JSON(http.StatusOK, kin.H {
-				"filepath" : ctx.Param("filepath"),
-			})
-		})
+		// g1.GET("/test/*filepath", func(ctx *kin.Context) {
+		// 	ctx.JSON(http.StatusOK, kin.H {
+		// 		"filepath" : ctx.Param("filepath"),
+		// 	})
+		// })
 
 	}
 	err := router.Run(":80")

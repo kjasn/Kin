@@ -33,6 +33,7 @@ func (n *node) insert(pattern string, parts []string, height int) {
 	// find a child match current level path
 	part := parts[height]
 	child := n.mathChild(part)
+
 	if child == nil {	// not exist
 		flag := part[0] == ':' || part[0] == '*'
 
@@ -41,6 +42,12 @@ func (n *node) insert(pattern string, parts []string, height int) {
 			isWild: flag,
 		}
 		n.children = append(n.children, child)
+	} else {
+		/////////////////////////////
+		if child.part[0] == ':' {
+			height -= 1
+		}
+		/////////////////////////////////
 	}
 
 	// match next level
@@ -71,12 +78,20 @@ func(n *node) search(parts []string, height int) *node {
 	}
 
 	part := parts[height]
+	flag := false
 	children := n.matchChildren(part)
 
 	for _, child := range children {
+		if child.part[0] == ':' {	// e.g.  : 
+			flag = true	// match a dynamic parameter path
+			height -= 1
+		}
+
 		result := child.search(parts, height + 1)
 		if result != nil {
 			return result
+		} else if flag {
+			return child	// return current router (a dynamic parameter router)
 		}
 	}
 
