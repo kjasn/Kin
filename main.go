@@ -2,7 +2,6 @@ package main
 
 import (
 	"Kjasn/Kin/kin"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -29,12 +28,6 @@ func main() {
 		// 	ctx.String(http.StatusOK, "the route is fixed")
 		// })
 
-		g1.GET("/:lang", func(ctx *kin.Context) {
-			ctx.JSON(http.StatusOK, kin.H {
-				"lang" : ctx.Param("lang"),
-			})
-			ctx.String(http.StatusOK, "this is a dynamic route")
-		})
 
 
 		// g1.GET("/golang/p", func(ctx *kin.Context) {
@@ -44,8 +37,13 @@ func main() {
 		g1.GET("/cpp", func(ctx *kin.Context) {
 			ctx.String(http.StatusOK, "this is cpp url")
 		})
+		g1.GET("/:lang", func(ctx *kin.Context) {
+			ctx.JSON(http.StatusOK, kin.H {
+				"lang" : ctx.Param("lang"),
+			})
+			ctx.String(http.StatusOK, "this is a dynamic route")
+		})
 
-		fmt.Println("over")
 
 		// wildcard '*' match
 		// g1.GET("/test/*filepath", func(ctx *kin.Context) {

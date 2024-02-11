@@ -69,7 +69,7 @@ func (n *node) matchChildren(part string) []*node {
 }
 
 // query  router path
-func(n *node) search(parts []string, height int) *node {
+func(n *node) search(parts []string, height int, flag bool) *node {
 	if height == len(parts) || strings.HasPrefix(n.part, "*"){
 		if n.pattern == "" { // no sign -- not a tail node
 			return nil
@@ -78,7 +78,7 @@ func(n *node) search(parts []string, height int) *node {
 	}
 
 	part := parts[height]
-	flag := false
+	// flag := false
 	children := n.matchChildren(part)
 
 	for _, child := range children {
@@ -87,13 +87,14 @@ func(n *node) search(parts []string, height int) *node {
 			height -= 1
 		}
 
-		result := child.search(parts, height + 1)
+		result := child.search(parts, height + 1, flag)
 		if result != nil {
 			return result
-		} else if flag {
-			return child	// return current router (a dynamic parameter router)
-		}
+		} 
 	}
 
+	if flag {	// children = nil or no match child (in children)
+		return n // return current router (a dynamic parameter router)
+	}
 	return nil
 }

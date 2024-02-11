@@ -64,7 +64,7 @@ func (r *router) getRoute(method string, path string) (*node, map[string]string)
 		return nil, nil
 	}
 
-	node := root.search(searchParts, 0)	// parsed path
+	node := root.search(searchParts, 0, false)	// parsed path
 	if node != nil {
 		parts := parsePattern(node.pattern)
 
