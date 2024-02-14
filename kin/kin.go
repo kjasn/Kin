@@ -3,6 +3,7 @@ package kin
 import (
 	"log"
 	"net/http"
+	"strings"
 )
 
 // type HandlerFunc func(http.ResponseWriter, *http.Request)
@@ -33,16 +34,23 @@ func (engine *Engine) Run(addr string) error {
 
 // ServeHTTP, evoked while server accept request
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	var middlewares []HandlerFunc
+
 	// construct a context first
-	c := newContext(w, req)
+	ctx := newContext(w, req)
 	// handle by router with context
 	for _, group := range engine.groups {
-		for _, middleware := range group.middlewares {
-			middleware(c)
+		if strings.HasPrefix(req.URL.Path, group.prefix) {
+			// for _, middleware := range group.middlewares {
+			// 	middlewares = append(middlewares, middleware)
+			// 	middleware(ctx)
+			// }
+			middlewares = append(middlewares, group.middlewares...)
 		}
 	}
 
-	engine.router.handle(c)
+	ctx.handlers = middlewares	// store middlewares of current req
+	engine.router.handle(ctx)
 }
 
 // not public
@@ -76,6 +84,6 @@ func (group *RouterGroup) Group(prefix string) *RouterGroup {
 }
 
 // Register middleware for group 
-func (group *RouterGroup) Use(handler HandlerFunc) {
-	group.middlewares = append(group.middlewares, handler)
+func (group *RouterGroup) Use(handlers ...HandlerFunc) {
+	group.middlewares = append(group.middlewares, handlers...)
 }
