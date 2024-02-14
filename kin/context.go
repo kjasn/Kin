@@ -18,6 +18,9 @@ type Context struct {
 	Params map[string]string
 	// response info
 	StatusCode int
+	// middleware
+	handlers []HandlerFunc
+	index int
 }
 
 // construction
@@ -27,51 +30,72 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Req:    req,
 		Path:   req.URL.Path,
 		Method: req.Method,
+		index: -1,
 	}
 }
 
 // Request
-func (c *Context) PostForm(key string) string {
-	return c.Req.FormValue(key)
+func (ctx *Context) PostForm(key string) string {
+	return ctx.Req.FormValue(key)
 }
 
-func (c *Context) Query(key string) string {
-	return c.Req.URL.Query().Get(key)
+func (ctx *Context) Query(key string) string {
+	return ctx.Req.URL.Query().Get(key)
 }
 
-func (c *Context) Param(key string) string {
-	// val, _ := c.Params[key]
+func (ctx *Context) Param(key string) string {
+	// val, _ := ctx.Params[key]
 	// return val
-	return c.Params[key]
+	return ctx.Params[key]
 }
 
 // Writer   Response
-func (c *Context) Status(code int) {
-	c.StatusCode = code
-	c.Writer.WriteHeader(code)
+func (ctx *Context) Status(code int) {
+	ctx.StatusCode = code
+	ctx.Writer.WriteHeader(code)
 }
 
-func (c *Context) SetHeader(key string, val string) {
-	c.Writer.Header().Set(key, val)
+func (ctx *Context) SetHeader(key string, val string) {
+	ctx.Writer.Header().Set(key, val)
 }
 
-func (c *Context) String(code int, format string, values ...interface{}) {
-	c.Writer.Header().Set("Content-Type", "text/plain")
-	c.Status(code)
-	c.Writer.Write([]byte(fmt.Sprintf(format, values...)))
+func (ctx *Context) String(code int, format string, values ...interface{}) {
+	ctx.Writer.Header().Set("Content-Type", "text/plain")
+	ctx.Status(code)
+	ctx.Writer.Write([]byte(fmt.Sprintf(format, values...)))
 }
 
-func (c *Context) JSON(code int, obj interface{}) {
-	c.Writer.Header().Set("Content-Type", "application/json")
-	c.Status(code)
-	encoder := json.NewEncoder(c.Writer)
+func (ctx *Context) JSON(code int, obj interface{}) {
+	ctx.Writer.Header().Set("Content-Type", "application/json")
+	ctx.Status(code)
+	encoder := json.NewEncoder(ctx.Writer)
 	if err := encoder.Encode(obj); err != nil {
-		http.Error(c.Writer, err.Error(), 500)
+		http.Error(ctx.Writer, err.Error(), 500)
 	}
 }
 
-func (c *Context) HTML(code int, html string) {
-	c.Writer.Header().Set("Content-Type", "application/html")
-	c.Status(code)
-	c.Writer.Write([]byte(html))
+func (ctx *Context) HTML(code int, html string) {
+	ctx.Writer.Header().Set("Content-Type", "application/html")
+	ctx.Status(code)
+	ctx.Writer.Write([]byte(html))
+}
+
+
+func (ctx *Context) Next() {
+	ctx.index ++	// current middleware index
+	n := len(ctx.handlers)
+
+	for ; ctx.index < n; ctx.index ++ {	// exec in order
+		ctx.handlers[ctx.index](ctx)
+	}
+}
+
+// #TODO
+func (ctx *Context) Set(key string, data interface{}) {
+	
+}
+
+
+func (ctx *Context) Get(key string) {
+
 }
