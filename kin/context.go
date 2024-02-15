@@ -21,6 +21,8 @@ type Context struct {
 	// middleware
 	handlers []HandlerFunc
 	index int
+	// kv pair storage for request
+	Keys map[string]interface{}
 }
 
 // construction
@@ -90,12 +92,16 @@ func (ctx *Context) Next() {
 	}
 }
 
-// #TODO
-func (ctx *Context) Set(key string, data interface{}) {
-	
+func (ctx *Context) Set(key string, value interface{}) {
+	if ctx.Keys == nil {
+		ctx.Keys = make(map[string]interface{})
+	}
+
+	ctx.Keys[key] = value
 }
 
 
-func (ctx *Context) Get(key string) {
-
+func (ctx *Context) Get(key string) (value interface{}, ok bool) {
+	value, ok = ctx.Keys[key]
+	return
 }
