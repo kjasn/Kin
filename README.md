@@ -86,3 +86,20 @@ path: 实际请求的路由，eg: `/test/123/a` (对应 pattern 的示例路由)
 parts: 由 pattern 或 path 按 `/`划分而来。 eg: `/test/:id/a => [test :id a]、/test/123/a => [test 123 a]`
 
 路由的注册和查询由 `insert` 和 `search` 完成，二者都递归查询路由表，但 `insert`查询到一个匹配的结点就立刻返回，`search`则会查询所有匹配的结点，返回一个这个结点数组，然后遍历这些结点继续递归的查询下一层路由，直到查询到完全匹配的路由。
+<<<<<<< HEAD
+=======
+
+路由注册的顺序很重要，更具体的路由需要在通用的路由（如：参数化的路由）之前注册，举个例子：
+
+```go
+router.GET("/:lang", func(ctx *kin.Context) {
+   ctx.String(http.StatusOK, "this is a dynamic route")
+})
+
+router.GET("/cpp", func(ctx *kin.Context) {
+   ctx.String(http.StatusOK, "this is cpp url")
+})
+```
+
+以上注册了两个路由，先注册的是更通用的路由 `/:lang` ，接着再注册 `/cpp`时，getRoute 会匹配到
+>>>>>>> 33453dbe2c51d3b6f7fe9d44b813555f09ce1104
