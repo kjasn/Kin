@@ -23,6 +23,8 @@ type Context struct {
 	index int
 	// kv pair storage for request
 	Keys map[string]interface{}
+	// engine pointer
+	engine *Engine
 }
 
 // construction
@@ -61,6 +63,14 @@ func (ctx *Context) SetHeader(key string, val string) {
 	ctx.Writer.Header().Set(key, val)
 }
 
+func (ctx *Context) Fail(code int, err string) {
+	ctx.index = len(ctx.handlers)
+	ctx.JSON(
+		code, 
+		H{"message" : err},
+	)
+}
+
 func (ctx *Context) String(code int, format string, values ...interface{}) {
 	ctx.Writer.Header().Set("Content-Type", "text/plain")
 	ctx.Status(code)
@@ -76,12 +86,21 @@ func (ctx *Context) JSON(code int, obj interface{}) {
 	}
 }
 
-func (ctx *Context) HTML(code int, html string) {
-	ctx.Writer.Header().Set("Content-Type", "application/html")
-	ctx.Status(code)
-	ctx.Writer.Write([]byte(html))
+func (ctx *Context) HTML(code int, fileName string, data interface{}) {
+	ctx.Writer.Header().Set("Content-Type", "text/html")
+	// ctx.Status(code)
+	if err := ctx.engine.htmlTemplates.ExecuteTemplate(ctx.Writer, fileName, data); err != nil {
+		ctx.Fail(500, err.Error())
+	} else {
+		ctx.Status(code)
+	}
+	// ctx.Writer.Write([]byte(html))
 }
 
+func (ctx *Context) Data(code int, data []byte) {
+	ctx.Status(code)
+	ctx.Writer.Write(data)
+}
 
 func (ctx *Context) Next() {
 	ctx.index ++	// current middleware index
