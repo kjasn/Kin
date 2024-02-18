@@ -1,20 +1,18 @@
 package main
 
 import (
-	"Kjasn/Kin/kin"
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/Kjasn/Kin/kin"
 )
 
 
 
 
 func main() {
-	router := kin.New()
-
-	router.Use(kin.Logger())
-
+	router := kin.Default()
 
 	router.LoadHTMLGlob("./static/*")
 	router.Static("/assets", "./static")
@@ -35,6 +33,12 @@ func main() {
 			ctx.Fail(500, "read failed")
 		}
 		ctx.Data(http.StatusOK, data)
+	})
+
+	router.GET("/panic", func(ctx *kin.Context) {
+		ctx.String(http.StatusOK, "something occured error~\n")
+		names := []string{"hello everyone"}
+		ctx.String(http.StatusOK, names[100])
 	})
 
 	err := router.Run(":80")

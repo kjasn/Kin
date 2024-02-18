@@ -21,14 +21,24 @@ type Engine struct {
 }
 
 
+
+
 // constructor
 func New() *Engine {
 	engine := &Engine{router: newRouter()}
 	engine.RouterGroup = &RouterGroup{
 		engine: engine,
-		middlewares: make([]HandlerFunc, 0),
+		// middlewares: make([]HandlerFunc, 0),
 	}
-	engine.groups = make([]*RouterGroup, 0)
+	// engine.groups = make([]*RouterGroup, 0)
+	engine.groups = []*RouterGroup{engine.RouterGroup}
+	return engine
+}
+
+// Default 	use Logger & Recovery 
+func Default() *Engine {
+	engine := New()
+	engine.Use(Recovery(), Logger())
 	return engine
 }
 
@@ -107,6 +117,12 @@ func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileS
 			return
 		}
 
+		// fetch filepath (relative path)
+		ctx.JSON(
+			http.StatusOK,
+			H {"filepath" : file}, 
+		)
+		// render by net/http package
 		fileServer.ServeHTTP(ctx.Writer, ctx.Req)
 	}
 }
