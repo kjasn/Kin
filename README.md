@@ -3,29 +3,33 @@
 This is a simple Go web framework that mimics the design and functionality of Gin.
 Studying from [@极客兔兔](https://geektutu.com/post/gee.html)
 
-这是一个简单的 Go Web 框架，模仿了 Gin 的设计和功能。跟着 @极客兔兔 的博客学。
+这是一个简单的 Go Web 框架，模仿了 Gin 的设计和功能。跟着 [@极客兔兔](https://geektutu.com/post/gee.html) 的博客学。
 
 ## 框架大致原型
 
-1. main.go : 测试用
-2. router_test.go : 单元测试
+项目结构如下：
 
-3. kin.go
-
-作为框架入口, 抽离出 router api 放到 router.go 中实现
-
-4. context.go
-
-- 封装 http.ResponseWriter 和 http.Request 以及相关的方
-- 实现常用的访问 Query 和 PostForm 参数方法
-- 实现 String/JSON/HTML 响应方法
-
-5. router.go
-   将从 kin.go 中抽离的 router 方法实现
-
-6. trie.go
-
-通过 trie 树存储和查询路由
+```shell
+D:\DEVELOP\GO\GOWORKPLACE\KIN
+│  .gitignore
+│  go.mod
+│  main.go				# 测试文件
+│  makefile
+│  README.md
+├─kin
+│      context.go		# 上下文设计 进行请求和响应的封装以及实现常用的访问和响应的方法
+│      kin.go			# 框架入口
+│      logger.go		# 记录日志的中间件
+│      recovery.go		# 错误恢复的中间件
+│      router.go		# 将从 kin.go 中抽离的 router 方法实现
+│      router_test.go	# 单元测试
+│      trie.go			# 通过 trie 树存储和查询路由
+│
+└─static				# 存放本地文件
+        file1.jpg
+        file2.md
+        template.html
+```
 
 ## 基于 net/http 标准库实现 web 框架的入口
 
@@ -58,6 +62,7 @@ type Context struct {
 	Params map[string]string
 	// response info
 	StatusCode int
+	// ...
 }
 ```
 
@@ -86,20 +91,30 @@ path: 实际请求的路由，eg: `/test/123/a` (对应 pattern 的示例路由)
 parts: 由 pattern 或 path 按 `/`划分而来。 eg: `/test/:id/a => [test :id a]、/test/123/a => [test 123 a]`
 
 路由的注册和查询由 `insert` 和 `search` 完成，二者都递归查询路由表，但 `insert`查询到一个匹配的结点就立刻返回，`search`则会查询所有匹配的结点，返回一个这个结点数组，然后遍历这些结点继续递归的查询下一层路由，直到查询到完全匹配的路由。
-<<<<<<< HEAD
-=======
 
-路由注册的顺序很重要，更具体的路由需要在通用的路由（如：参数化的路由）之前注册，举个例子：
+## 中间件
+
+中间件类似路由处理函数(HandlFunc)，区别在于中间件返回的是一个闭包。中间件保存在 `Context` 中，因为中间件不仅作用在处理流程前，也可以作用在处理流程后，即在用户定义的 Handler 处理完毕后，还可以执行剩下的操作。
+中间件通过 `Next()` 方法递归的触发，由索引来标示顺序。每次调用 `Next()` ，控制权就交给下一个中间件。
+
+## 模板
+
+框架需要做的是将请求的地址映射到文件实际的存储地址，接着找到文件后，如何返回这一步，net/http 库已经实现了。
+
+eg: 我们将静态文件放在 `/assets/` 下， 服务上文件存储在 `./static/`，接着将 `./static/` 映射到 `/assets/`，访问 `localhost/assets/file` 时就会解析为 `./static/file` （file 为 static 路径下文件的相对路径）
+
+在 `Engine` 中加上以下两个字段 `*template.Template` 和 `template.FuncMap` 对象，前者存储全局加载的模板，后者存储自定义的渲染函数。
 
 ```go
-router.GET("/:lang", func(ctx *kin.Context) {
-   ctx.String(http.StatusOK, "this is a dynamic route")
-})
-
-router.GET("/cpp", func(ctx *kin.Context) {
-   ctx.String(http.StatusOK, "this is cpp url")
-})
+type Engine struct {
+	// ...
+	// serve as html render
+	htmlTemplates *template.Template	// store all html templates
+	funcMap template.FuncMap	// render func
+}
 ```
 
-以上注册了两个路由，先注册的是更通用的路由 `/:lang` ，接着再注册 `/cpp`时，getRoute 会匹配到
->>>>>>> 33453dbe2c51d3b6f7fe9d44b813555f09ce1104
+## 错误恢复
+
+由于我们在处理错误时都是之间 `panic(err)`，这样可能由于错误的请求使得服务器宕机，为避免这种情况，我们使用 `recover()` 来恢复错误。
+每当错误发生时 `panic(err)` 之前会处理 `defer` 的任务，因此我们可以在 `defer` 中使用 `recover()` 来进行错误恢复。

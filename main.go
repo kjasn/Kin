@@ -9,6 +9,17 @@ import (
 )
 
 
+type demo1 struct {
+	a int8
+	b int16
+	c int32
+}
+
+type demo2 struct {
+	a int8
+	c int32
+	b int16
+}
 
 
 func main() {
@@ -36,7 +47,7 @@ func main() {
 	})
 
 	router.GET("/panic", func(ctx *kin.Context) {
-		ctx.String(http.StatusOK, "something occured error~\n")
+		ctx.String(http.StatusOK, "something occurred error~\n")
 		names := []string{"hello everyone"}
 		ctx.String(http.StatusOK, names[100])
 	})

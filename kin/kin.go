@@ -118,20 +118,22 @@ func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileS
 		}
 
 		// fetch filepath (relative path)
-		ctx.JSON(
-			http.StatusOK,
-			H {"filepath" : file}, 
-		)
+		// ctx.JSON(
+		// 	http.StatusOK,
+		// 	H {"filepath" : file}, 
+		// )
 		// render by net/http package
 		fileServer.ServeHTTP(ctx.Writer, ctx.Req)
 	}
 }
 
-// serve static file, map path in localstorage(root) to server as a router(relativePath) 
+// serve static file
+// parse request addr(relativePath) to get localstorage(root)
 func (group *RouterGroup) Static(relativePath string, root string) {
 	handler := group.createStaticHandler(relativePath, http.Dir(root))
 	urlPattern := path.Join(relativePath, "/*filepath")
 
+	// register urlPattern 
 	group.GET(urlPattern, handler)
 }
 
