@@ -1,9 +1,12 @@
 # Kin
 
-This is a simple Go web framework that mimics the design and functionality of Gin.
-Studying from [@极客兔兔](https://geektutu.com/post/gee.html)
+这是一个小型的 Go Web 框架，模仿了 Gin 的设计和功能。实现了如下功能：
 
-这是一个简单的 Go Web 框架，模仿了 Gin 的设计和功能。跟着 [@极客兔兔](https://geektutu.com/post/gee.html) 的博客学。
+1. **Web 框架入口设计**：基于 net/http 标准库实现了 web 框架的入口，提供了自定义 Engine 接口，支持自定义路由和中间件。
+2. **上下文 Context 设计**：设计了上下文 Context，用于封装请求和响应，简化消息头设置，并实现了常用的访问和响应方法。
+3. **路由管理**：采用 Trie 树存储和查询路由，实现了路由注册和查询功能，支持动态参数和通配符路由。
+4. **中间件支持**：实现了中间件机制，允许在请求处理流程前后插入额外的处理逻辑，支持中间件的顺序控制和错误恢复。
+5. **模板渲染**：支持模板渲染功能，将请求的地址映射到实际文件存储地址，通过 net/http 库实现静态文件服务。
 
 ## 框架大致原型
 
