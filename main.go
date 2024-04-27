@@ -2,26 +2,12 @@ package main
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"os"
 
 	"github.com/Kjasn/Kin/kin"
 )
-
-
-type demo1 struct {
-	a int8
-	b int16
-	c int32
-}
-
-type demo2 struct {
-	a int8
-	c int32
-	b int16
-}
-
-
 func main() {
 	router := kin.Default()
 
@@ -50,6 +36,18 @@ func main() {
 		ctx.String(http.StatusOK, "something occurred error~\n")
 		names := []string{"hello everyone"}
 		ctx.String(http.StatusOK, names[100])
+	})
+
+	router.GET("/index/:lang/doc", func(ctx *kin.Context) {
+		lang, ok := ctx.Param("lang")
+		if !ok {
+			log.Panicln("field not exists")
+		}
+		log.Println("matches " + ctx.Path, ",lang is ", lang)
+	})
+
+	router.GET("/index/go/doc", func(ctx *kin.Context) {
+		log.Println("matches " + ctx.Path)
 	})
 
 	err := router.Run(":80")

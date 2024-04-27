@@ -90,11 +90,15 @@ func(n *node) search(parts []string, height int, flag bool) *node {
 		result := child.search(parts, height + 1, flag)
 		if result != nil {
 			return result
-		} 
+		} else {
+			if flag {
+				return child.search(parts, height + 2, flag)	// TODO
+			}
+		}
 	}
 
-	if flag {	// children = nil or no match child (in children)
-		return n // return current router (a dynamic parameter router)
-	}
+	// if flag {	// children = nil or no match child (in children)
+	// 	return n // return current router (a dynamic parameter router)
+	// }
 	return nil
 }

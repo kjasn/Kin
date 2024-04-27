@@ -111,7 +111,10 @@ func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileS
 	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
 
 	return func(ctx *Context) {
-		file := ctx.Param("filepath")
+		file, ok := ctx.Param("filepath")
+		if !ok {
+			ctx.Fail(http.StatusBadRequest, "field not exists\n")
+		}
 		if _, err := fs.Open(file); err != nil {
 			ctx.Status(http.StatusNotFound)
 			return

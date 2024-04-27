@@ -47,10 +47,9 @@ func (ctx *Context) Query(key string) string {
 	return ctx.Req.URL.Query().Get(key)
 }
 
-func (ctx *Context) Param(key string) string {
-	// val, _ := ctx.Params[key]
-	// return val
-	return ctx.Params[key]
+func (ctx *Context) Param(key string) (val string, ok bool){
+	val, ok = ctx.Params[key]
+	return
 }
 
 // Writer   Response
