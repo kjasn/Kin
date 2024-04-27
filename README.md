@@ -1,9 +1,6 @@
 # Kin
 
-This is a simple Go web framework that mimics the design and functionality of Gin.
-Studying from [@极客兔兔](https://geektutu.com/post/gee.html)
-
-这是一个简单的 Go Web 框架，模仿了 Gin 的设计和功能。跟着 [@极客兔兔](https://geektutu.com/post/gee.html) 的博客学。
+这是一个简单的 Go Web 框架，模仿了 Gin 的设计和功能。
 
 ## 框架大致原型
 
@@ -81,21 +78,52 @@ type node struct {
 }
 ```
 
-pattern: 完整的请求路由，只在路由段最后一个结点才会设置 pattern，否则为空 eg: `/test/:id/a` ，只有在 `a` 结点才设置 pattern 为 `/test/:id/a` ，
+pattern: 完整的请求路由，只在路由段最后一个结点才会设置 pattern，否则为空 eg: `/test/:id/a` ，只有在 `a` 结点才设置 pattern 为 `/test/:id/a`
 
-由此可用来判断是否匹配成功： `/test/12`，匹配结束，最后一个结点 `12`的 pattern 为空，即路由表不存在该路由。而 `/test/12/a`，`a`的 pattern 非空，匹配成功。
+由此可用来判断是否匹配成功： `/test/12`，匹配结束，判断最后一个结点 `12`的 pattern 是否为空，为空则路由表不存在该路由。而 `/test/12/a`，`a`的 pattern 非空，则匹配成功。
 
-part: 当前结点的路由段，eg: `/a/b/c`中 `"" 、b、c` 都是
-isWild: 用来标记是否为 动态参数 或 通配路由(\*)
+part: 当前结点的路由段，由于 URL 是通过 `/` 来 分隔的，因此这里将每一段作为结点的 part，eg: `/a/b/c`中 `'' 、b、c` 都是它的 part。
+
+isWild: 用来标记是否为 动态参数(`:`) 或 通配路由(`*`)
+
 path: 实际请求的路由，eg: `/test/123/a` (对应 pattern 的示例路由)
-parts: 由 pattern 或 path 按 `/`划分而来。 eg: `/test/:id/a => [test :id a]、/test/123/a => [test 123 a]`
 
-路由的注册和查询由 `insert` 和 `search` 完成，二者都递归查询路由表，但 `insert`查询到一个匹配的结点就立刻返回，`search`则会查询所有匹配的结点，返回一个这个结点数组，然后遍历这些结点继续递归的查询下一层路由，直到查询到完全匹配的路由。
+parts: 由 pattern 或 path 按 `/`划分而来。 eg: `/test/:id/a => [test, :id, a]、/test/123/a => [test, 123, a]`
+
+路由的注册和查询由 `insert` 和 `search` 完成，二者都递归查询路由表，但 `insert`查询到一个匹配的结点就立刻返回，`search`则会查询所有匹配的结点，返回一个这个结点切片，然后遍历这些结点继续递归的查询下一层路由，直到查询到完全匹配的路由。
+
+### 关于动态路由匹
+
+插入一个动态路由之后如果插入了与 该动态路由 匹配的 路由则会将这个 路由 作为动态路由的子节点， 以下用一个例子和简易的结构来说明：
+
+```bash
+insert  /index/:lang/doc  ==> node { index { :lang { doc } } }
+... # 其他操作
+insert  /index/go/doc  ==> node { index { :lang { doc, go { doc } } } }
+```
+
+对于在 动态路由 前插入的 路由 则不会自动归为 动态路由一组，而且在查询匹配路由时也是先匹配精确路由，eg:
+
+```bash
+insert  /index/go/doc  ==> node { index { go { doc }, :lang { doc } } }
+... # 其他操作
+insert  /index/:lang/doc  ==> node { index { :lang { doc } } }
+```
+
+此时如果请求 `/index/go/doc` 则会匹配到第一个，也就是精确路由`/index/go/doc`，如果请求 `/index/cpp/doc` 会匹配第二个，也就是动态路由`/index/:lang/doc`
 
 ## 中间件
 
-中间件类似路由处理函数(HandlFunc)，区别在于中间件返回的是一个闭包。中间件保存在 `Context` 中，因为中间件不仅作用在处理流程前，也可以作用在处理流程后，即在用户定义的 Handler 处理完毕后，还可以执行剩下的操作。
+中间件类似路由处理函数(HandleFunc)，区别在于中间件返回的是一个闭包。中间件保存在 `Context` 中，因为中间件不仅作用在处理流程前，也可以作用在处理流程后，即在用户定义的 Handler 处理完毕后，还可以执行剩下的操作。
 中间件通过 `Next()` 方法递归的触发，由索引来标示顺序。每次调用 `Next()` ，控制权就交给下一个中间件。
+
+Q: 将 中间件和路由对应的处理函数都放在 context 中会不使得 context 变得更重，为什么要这么做？
+A: 会，但在实际应用中，如果处理函数的数量不是很多，且每个处理函数的执行时间不是很长，那么这种设计通常不会对性能造成显著影响。且这样做很 oop，可读性和维护性好。
+
+context 的 handlers 字段存储一系列的**中间件函数和路由对应的处理函数**。**这些函数按照添加的顺序被执行**，每个函数都有机会处理请求或响应，或者决定是否继续执行下一个函数。这样做的主要原因有：
+
+1. 可以在处理请求的过程中，让不同的处理函数**共享请求的上下文信息**。
+2. 通过在 context 中维护一个处理函数的切片，可以**确保中间件按照添加的顺序被执行**，并且可以通过 context 中的索引来**控制是否继续执行下一个处理函数**。
 
 ## 模板
 
